@@ -2,6 +2,7 @@ console.log("Script cargado correctamente");
 
 document.getElementById("generar").addEventListener("click", async () => {
   console.log("Botón presionado");
+  document.getElementById("log").textContent = "Cargando respuestas...."
   const prompt = document.getElementById("prompt").value;
 
   let respuestaCohere = "Sin respuesta de Cohere.";
@@ -51,6 +52,8 @@ document.getElementById("generar").addEventListener("click", async () => {
   } catch (error) {
     console.error("Error al obtener respuesta de Gemini:", error);
   }
+
+  document.getElementById("log").textContent = "Respuesta generadas."
 
   document.getElementById("respuestaGemini").textContent = `Gemini dice:\n${respuestaGemini}`;
   document.getElementById("respuestaCohere").textContent = `Cohere dice:\n${respuestaCohere}`;
