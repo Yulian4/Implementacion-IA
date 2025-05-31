@@ -1,35 +1,58 @@
-document.getElementById("generar").addEventListener("click", obtenerRespuesta);
+console.log("Script cargado correctamente");
 
-async function obtenerRespuesta() {
+document.getElementById("generar").addEventListener("click", async () => {
+  console.log("Botón presionado");
   const prompt = document.getElementById("prompt").value;
 
-  const [resGemini, resCohere, resHuggin] = await Promise.all([
-    fetch("/api/gemini", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt })
-    }),
-    fetch("/api/cohere", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt })
-    }),
-    fetch("/api/huggingface", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt })
-    })
-  ]);
+  let respuestaCohere = "Sin respuesta de Cohere.";
+  let respuestaMistral = "Sin respuesta de Mistral";
+  let respuestaGemini = "Sin respuesta de Gemini.";
 
-  const dataGemini = await resGemini.json();
-  const dataCohere = await resCohere.json();
-  const dataHuggin = await resHuggin.json();
+  try {
+    const resCohere = await fetch("/api/cohere", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: prompt })
+    });
+    if (resCohere.ok) {
+      const dataCohere = await resCohere.json();
+      respuestaCohere = dataCohere.text || dataCohere.generations?.[0]?.text || respuestaCohere;
+    }
+  } catch (error) {
+    console.error("Error al obtener respuesta de Cohere:", error);
+  }
 
-  const respuestaGemini = dataGemini.candidates?.[0]?.content?.parts?.[0]?.text || "Sin respuesta de Gemini.";
-  const respuestaCohere = dataCohere.text || "Sin respuesta de Cohere.";
-  const respuestaHuggin = dataHuggin?.[0]?.generated_text || "Sin respuesta de Hugging Face.";
+  try {
+    const resMistral = await fetch("/api/mistral", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt })
+    });
+
+    if (resMistral.ok) {
+      const dataMistral = await resMistral.json();
+      respuestaMistral = dataMistral.choices?.[0]?.message?.content || respuestaMistral;
+    }
+  } catch (error) {
+    console.error("Error al obtener respuesta de Mistral:", error);
+  }
+
+
+  try {
+    const resGemini = await fetch("/api/gemini", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt })
+    });
+    if (resGemini.ok) {
+      const dataGemini = await resGemini.json();
+      respuestaGemini = dataGemini.candidates?.[0]?.content?.parts?.[0]?.text || respuestaGemini;
+    }
+  } catch (error) {
+    console.error("Error al obtener respuesta de Gemini:", error);
+  }
 
   document.getElementById("respuestaGemini").textContent = `Gemini dice:\n${respuestaGemini}`;
   document.getElementById("respuestaCohere").textContent = `Cohere dice:\n${respuestaCohere}`;
-  document.getElementById("respuestaHuggin").textContent = `Hugging Face dice:\n${respuestaHuggin}`;
-}
+  document.getElementById("respuestaMistral").textContent = `Mistral dice:\n${respuestaMistral}`;
+});

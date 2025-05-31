@@ -1,96 +1,97 @@
-import express from "express";
-import fetch from "node-fetch";
-import dotenv from "dotenv";
+import express from 'express';
+import dotenv from 'dotenv';
+import fetch from 'node-fetch';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
 const app = express();
+const port = process.env.PORT || 3000;
+
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use(express.static(path.join(__dirname, 'public')));
+
 app.use(express.json());
 
-// Servir frontend
-app.use(express.static("public"));
-
-// CORS (si accedes desde otra URL externa, por ejemplo desde localhost)
-app.use((_, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  next();
-});
-
-// Ruta Gemini
-app.post("/api/gemini", async (req, res) => {
-  const { prompt } = req.body;
-  const body = {
-    contents: [{ parts: [{ text: prompt }] }]
-  };
-
-  try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.API_KEY1}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    });
-
-    const data = await response.json();
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: "Error en Gemini", detail: err.message });
-  }
-});
-
-// Ruta Cohere
-app.post("/api/cohere", async (req, res) => {
-  const { prompt } = req.body;
-  const body = {
-    message: prompt,
-    model: "command-r-plus",
-    temperature: 0.7
-  };
-
-  try {
-    const response = await fetch("https://api.cohere.ai/v1/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.COHERE_API_KEY}`,
-        "Cohere-Version": "2022-12-06"
-      },
-      body: JSON.stringify(body)
-    });
-
-    const data = await response.json();
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: "Error en Cohere", detail: err.message });
-  }
-});
-
-// Ruta Hugging Face
-app.post("/api/huggingface", async (req, res) => {
-  const { prompt } = req.body;
-  const body = {
-    inputs: prompt,
-    parameters: {
-      max_new_tokens: 100,
-      temperature: 0.7
+app.post('/api/cohere', async (req, res) => {
+    const { message } = req.body;
+    try {
+        const response = await fetch('https://api.cohere.ai/v1/chat', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${process.env.COHERE_API_KEY}`,
+                'Content-Type': 'application/json',
+                'Cohere-Version': '2022-12-06'
+            },
+            body: JSON.stringify({
+                message,
+                model: 'command-r-plus',
+                temperature: 0.7
+            })
+        });
+        const data = await response.json();
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: 'Error al obtener respuesta de Cohere.' });
     }
-  };
-
-  try {
-    const response = await fetch("https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": process.env.API_KEY3
-      },
-      body: JSON.stringify(body)
-    });
-
-    const data = await response.json();
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: "Error en Hugging Face", detail: err.message });
-  }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor en puerto ${PORT}`));
+app.post('/api/mistral', async (req, res) => {
+    const { prompt } = req.body;
+    try {
+        const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${process.env.API_KEY3}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: "mistral-medium",  
+                messages: [{ role: "user", content: prompt }],
+                temperature: 0.7,
+                max_tokens: 200
+            })
+        });
+        const data = await response.json();
+        res.json(data);
+    } catch (error) {
+        console.error("Error en Mistral:", error);
+        res.status(500).json({ error: 'Error al obtener respuesta de Mistral.' });
+    }
+});
+
+app.post('/api/gemini', async (req, res) => {
+    const { prompt } = req.body;
+
+    const bodyGemini = {
+        contents: [
+            {
+                parts: [{ text: prompt }]
+            }
+        ]
+    };
+
+    try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(bodyGemini)
+        });
+
+        const data = await response.json();
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: 'Error al obtener respuesta de Gemini.' });
+    }
+});
+
+app.listen(port, () => {
+    console.log(`Servidor corriendo en http://localhost:${port}`);
+});
+console.log('GEMINI_API_KEY:', process.env.GEMINI_API_KEY);
+console.log('COHERE_API_KEY:', process.env.COHERE_API_KEY);
+console.log('API_KEY3:', process.env.API_KEY3);
