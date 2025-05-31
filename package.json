@@ -1,0 +1,26 @@
+{
+  "name": "mi-proyecto",
+  "version": "1.0.0",
+  "main": "servej.js",
+  "scripts": {
+    "start": "node servej.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.5.0",
+    "express": "^4.21.2",
+    "node-fetch": "^3.3.2"
+  },
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Yulian4/Implementacion-IA.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Yulian4/Implementacion-IA/issues"
+  },
+  "homepage": "https://github.com/Yulian4/Implementacion-IA#readme",
+  "description": ""
+}
